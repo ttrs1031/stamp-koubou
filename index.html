@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>スタンプ工房</title>
+    <meta name="theme-color" content="#06c755">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="スタンプ工房">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <link rel="manifest" href="./manifest.json">
+    <link rel="apple-touch-icon" href="./icons/icon-180.png">
+    <link rel="icon" href="./icons/icon-192.png">
+    <link rel="stylesheet" href="./style.css">
+  </head>
+  <body>
+    <main class="app">
+      <section class="hero">
+        <div>
+          <p class="eyebrow">LINE Creators Market 申請用</p>
+          <h1>スタンプ工房</h1>
+          <p class="lead">LINEスタンプ画像を、申請サイズへ一括変換</p>
+        </div>
+      </section>
+
+      <section class="workspace">
+        <aside class="controls" aria-label="変換設定">
+          <div class="field">
+            <label>作成するセット</label>
+            <div class="mode-grid" role="group" aria-label="作成するセット">
+              <button class="mode-card is-active" type="button" data-package-mode="stamp" aria-pressed="true">
+                <span>スタンプセット</span>
+                <strong>スタンプ + メイン + タブ</strong>
+              </button>
+              <button class="mode-card" type="button" data-package-mode="emoji" aria-pressed="false">
+                <span>絵文字セット</span>
+                <strong>絵文字 + タブ</strong>
+              </button>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="setName">ZIPファイル名</label>
+            <input id="setName" type="text" placeholder="例: ありがとうセット" autocomplete="off">
+            <p class="field-help">入力すると「ありがとうセット_stamp.zip」のような名前で保存します。未入力なら標準名で保存します。</p>
+          </div>
+
+          <div class="field">
+            <label for="transparentColor">透明にする背景色</label>
+            <div class="inline">
+              <input id="transparentColor" type="color" value="#ffffff">
+              <input id="hexColor" type="text" value="#ffffff" inputmode="text" aria-label="背景色の16進数">
+            </div>
+            <p class="field-help">変換前プレビューの画像をタップすると、その場所の色を背景色に設定できます。</p>
+          </div>
+
+          <div class="field">
+            <div class="label-row">
+              <label for="tolerance">透明化の強さ</label>
+              <output id="toleranceValue" for="tolerance">35</output>
+            </div>
+            <input id="tolerance" type="range" min="0" max="120" value="35">
+          </div>
+
+          <label class="toggle-row">
+            <input id="livePreview" type="checkbox">
+            <span>
+              <strong>自動プレビュー</strong>
+              <small>設定変更後に自動で再変換します</small>
+            </span>
+          </label>
+
+          <div class="actions">
+            <button id="convertBtn" class="primary-action" type="button" disabled>一括変換する</button>
+            <div class="download-actions" aria-label="保存メニュー">
+              <button id="downloadAllPngBtn" type="button" disabled>すべてPNG保存</button>
+              <button id="downloadSelectedPngBtn" type="button" disabled>選択PNG保存</button>
+              <button id="downloadBtn" type="button" disabled>申請用ZIP保存</button>
+              <button id="downloadSelectedBtn" type="button" disabled>選択ZIP保存</button>
+            </div>
+          </div>
+
+          <p id="status" class="status" role="status">作成するセットを選び、必要な画像を追加してください。</p>
+          <div id="checkPanel" class="check-panel" hidden>
+            <h3>申請チェック</h3>
+            <ul id="checkList"></ul>
+          </div>
+        </aside>
+
+        <section class="preview-panel" aria-label="アップロードとプレビュー">
+          <div class="preview-header">
+            <h2>画像セット</h2>
+            <div class="preview-tools">
+              <button id="selectAllBtn" type="button" disabled>全選択</button>
+              <button id="clearSelectionBtn" type="button" disabled>選択解除</button>
+              <span id="countBadge">0枚</span>
+            </div>
+          </div>
+
+          <div id="uploadGroups" class="upload-groups">
+            <section class="upload-group" data-group="stamp">
+              <div>
+                <h3>スタンプ画像</h3>
+                <p>複数枚 / 370×320px以内 / 01.png, 02.png...</p>
+              </div>
+              <label class="drop-zone" for="stampInput">
+                <span class="drop-icon">+</span>
+                <span class="drop-title">スタンプ画像を選択</span>
+                <span class="drop-help">複数選択できます</span>
+                <input id="stampInput" data-file-input="stamp" type="file" accept="image/*" multiple>
+              </label>
+              <div class="source-list" data-source-list="stamp"></div>
+            </section>
+
+            <section class="upload-group" data-group="main">
+              <div>
+                <h3>メイン画像</h3>
+                <p>1枚 / 240×240px / main.png</p>
+              </div>
+              <label class="drop-zone" for="mainInput">
+                <span class="drop-icon">+</span>
+                <span class="drop-title">メイン画像を選択</span>
+                <span class="drop-help">1枚だけ使います</span>
+                <input id="mainInput" data-file-input="main" type="file" accept="image/*">
+              </label>
+              <button class="helper-btn" type="button" data-autofill="main">スタンプ1枚目から自動作成</button>
+              <div class="source-list" data-source-list="main"></div>
+            </section>
+
+            <section class="upload-group" data-group="emoji">
+              <div>
+                <h3>絵文字画像</h3>
+                <p>複数枚 / 180×180px / emoji_01.png, emoji_02.png...</p>
+              </div>
+              <label class="drop-zone" for="emojiInput">
+                <span class="drop-icon">+</span>
+                <span class="drop-title">絵文字画像を選択</span>
+                <span class="drop-help">複数選択できます</span>
+                <input id="emojiInput" data-file-input="emoji" type="file" accept="image/*" multiple>
+              </label>
+              <div class="source-list" data-source-list="emoji"></div>
+            </section>
+
+            <section class="upload-group" data-group="tab">
+              <div>
+                <h3>トークルームタブ画像</h3>
+                <p>1枚 / 96×74px / tab.png</p>
+              </div>
+              <label class="drop-zone" for="tabInput">
+                <span class="drop-icon">+</span>
+                <span class="drop-title">タブ画像を選択</span>
+                <span class="drop-help">1枚だけ使います</span>
+                <input id="tabInput" data-file-input="tab" type="file" accept="image/*">
+              </label>
+              <button class="helper-btn" type="button" data-autofill="tab">1枚目から自動作成</button>
+              <div class="source-list" data-source-list="tab"></div>
+            </section>
+          </div>
+
+          <div class="result-section">
+            <h2>変換後プレビュー</h2>
+            <div id="previewList" class="preview-list">
+              <p class="empty">必要な画像を追加して「一括変換する」を押すと、変換後のPNGが表示されます。</p>
+            </div>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
