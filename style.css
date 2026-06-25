@@ -11,6 +11,7 @@
   --accent-dark: #05a848;
   --accent-soft: #e9fbf0;
   --danger: #b42318;
+  --danger-soft: #fff1f0;
   --shadow: 0 20px 60px rgba(15, 23, 42, 0.08);
   --shadow-soft: 0 8px 24px rgba(15, 23, 42, 0.06);
 }
@@ -381,6 +382,12 @@ button {
   color: #344054;
 }
 
+.reset-action {
+  border: 1px solid #f6b8af;
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
 button:disabled {
   cursor: not-allowed;
   opacity: 0.45;
@@ -550,13 +557,22 @@ button:disabled {
 
 .source-chip {
   display: grid;
-  grid-template-columns: 56px 1fr;
+  grid-template-columns: 56px 1fr auto;
   gap: 10px;
   align-items: center;
   padding: 8px;
   border: 1px solid var(--line);
   border-radius: 16px;
   background: #fbfcfe;
+}
+
+.remove-source-btn {
+  min-height: 36px;
+  border: 1px solid #f6b8af;
+  background: var(--danger-soft);
+  color: var(--danger);
+  font-size: 0.82rem;
+  padding: 0 10px;
 }
 
 .source-chip img {
@@ -741,6 +757,15 @@ button:disabled {
   .type-grid,
   .download-actions {
     grid-template-columns: 1fr;
+  }
+
+  .source-chip {
+    grid-template-columns: 56px 1fr;
+  }
+
+  .remove-source-btn {
+    grid-column: 1 / -1;
+    width: 100%;
   }
 
   .drop-zone {

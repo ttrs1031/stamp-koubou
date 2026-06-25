@@ -17,7 +17,7 @@
     <main class="app">
       <section class="hero">
         <div>
-          <p class="eyebrow">LINE Creators Market 申請用</p>
+          <p class="eyebrow">LINE Creators Market 申請用 / v1.2</p>
           <h1>スタンプ工房</h1>
           <p class="lead">LINEスタンプ画像を、申請サイズへ一括変換</p>
         </div>
@@ -46,11 +46,22 @@
           </div>
 
           <div class="field">
+            <label class="toggle-row">
+              <input id="transparentEnabled" type="checkbox" checked>
+              <span>
+                <strong>背景を透明化する</strong>
+                <small>OFFの場合は、元画像の背景を維持します</small>
+              </span>
+            </label>
+          </div>
+
+          <div class="field">
             <label for="transparentColor">透明にする背景色</label>
             <div class="inline">
               <input id="transparentColor" type="color" value="#ffffff">
               <input id="hexColor" type="text" value="#ffffff" inputmode="text" aria-label="背景色の16進数">
             </div>
+            <button id="autoColorBtn" class="helper-btn" type="button" disabled>背景色を自動選択</button>
             <p class="field-help">変換前プレビューの画像をタップすると、その場所の色を背景色に設定できます。</p>
           </div>
 
@@ -78,6 +89,7 @@
               <button id="downloadBtn" type="button" disabled>申請用ZIP保存</button>
               <button id="downloadSelectedBtn" type="button" disabled>選択ZIP保存</button>
             </div>
+            <button id="resetBtn" class="reset-action" type="button" disabled>リセット</button>
           </div>
 
           <p id="status" class="status" role="status">作成するセットを選び、必要な画像を追加してください。</p>
@@ -105,8 +117,8 @@
               </div>
               <label class="drop-zone" for="stampInput">
                 <span class="drop-icon">+</span>
-                <span class="drop-title">スタンプ画像を選択</span>
-                <span class="drop-help">複数選択できます</span>
+                <span class="drop-title">スタンプ画像を追加</span>
+                <span class="drop-help">複数選択できます。追加分は末尾に入ります</span>
                 <input id="stampInput" data-file-input="stamp" type="file" accept="image/*" multiple>
               </label>
               <div class="source-list" data-source-list="stamp"></div>
@@ -119,8 +131,8 @@
               </div>
               <label class="drop-zone" for="mainInput">
                 <span class="drop-icon">+</span>
-                <span class="drop-title">メイン画像を選択</span>
-                <span class="drop-help">1枚だけ使います</span>
+                <span class="drop-title">メイン画像を追加</span>
+                <span class="drop-help">1枚だけ使います。再選択すると差し替えます</span>
                 <input id="mainInput" data-file-input="main" type="file" accept="image/*">
               </label>
               <button class="helper-btn" type="button" data-autofill="main">スタンプ1枚目から自動作成</button>
@@ -130,12 +142,13 @@
             <section class="upload-group" data-group="emoji">
               <div>
                 <h3>絵文字画像</h3>
-                <p>複数枚 / 180×180px / emoji_01.png, emoji_02.png...</p>
+                <p>複数枚 / 180×180px / 001.png, 002.png...</p>
+                <p>絵文字用ZIPはLINE指定形式の 001.png〜040.png で出力します</p>
               </div>
               <label class="drop-zone" for="emojiInput">
                 <span class="drop-icon">+</span>
-                <span class="drop-title">絵文字画像を選択</span>
-                <span class="drop-help">複数選択できます</span>
+                <span class="drop-title">絵文字画像を追加</span>
+                <span class="drop-help">複数選択できます。追加分は末尾に入ります</span>
                 <input id="emojiInput" data-file-input="emoji" type="file" accept="image/*" multiple>
               </label>
               <div class="source-list" data-source-list="emoji"></div>
@@ -148,8 +161,8 @@
               </div>
               <label class="drop-zone" for="tabInput">
                 <span class="drop-icon">+</span>
-                <span class="drop-title">タブ画像を選択</span>
-                <span class="drop-help">1枚だけ使います</span>
+                <span class="drop-title">タブ画像を追加</span>
+                <span class="drop-help">1枚だけ使います。再選択すると差し替えます</span>
                 <input id="tabInput" data-file-input="tab" type="file" accept="image/*">
               </label>
               <button class="helper-btn" type="button" data-autofill="tab">1枚目から自動作成</button>
