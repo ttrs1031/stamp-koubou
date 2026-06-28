@@ -1,4 +1,4 @@
-const CACHE_NAME = "stamp-koubou-pwa-v1.2";
+const CACHE_NAME = "stamp-koubou-pwa-v1.3";
 const APP_SHELL = [
   "./",
   "./index.html",

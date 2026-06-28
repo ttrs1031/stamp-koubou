@@ -58,6 +58,7 @@ let convertedFiles = [];
 let selectedFileNames = new Set();
 let autoConvertTimer = 0;
 let isConverting = false;
+let sourceEntryId = 0;
 
 for (const card of modeCards) {
   card.addEventListener("click", () => {
@@ -69,10 +70,10 @@ for (const card of modeCards) {
 }
 
 for (const input of fileInputs) {
-  input.addEventListener("change", () => {
+  input.addEventListener("change", async () => {
     const group = input.dataset.fileInput;
     const files = [...input.files].filter((file) => file.type.startsWith("image/"));
-    addSourceFiles(group, files);
+    await addSourceFiles(group, files);
     input.value = "";
   });
 }
@@ -85,13 +86,13 @@ for (const zone of document.querySelectorAll(".drop-zone")) {
   zone.addEventListener("dragleave", () => {
     zone.classList.remove("is-dragging");
   });
-  zone.addEventListener("drop", (event) => {
+  zone.addEventListener("drop", async (event) => {
     event.preventDefault();
     zone.classList.remove("is-dragging");
     const input = zone.querySelector("[data-file-input]");
     const group = input.dataset.fileInput;
     const files = [...event.dataTransfer.files].filter((file) => file.type.startsWith("image/"));
-    addSourceFiles(group, files);
+    await addSourceFiles(group, files);
   });
 }
 
@@ -103,7 +104,11 @@ for (const button of document.querySelectorAll("[data-autofill]")) {
       setStatus("先に元になる画像を追加してください。", true);
       return;
     }
-    sourceFiles[target] = [sourceFiles[sourceGroup][0]];
+    sourceFiles[target] = [createSourceEntry(sourceFiles[sourceGroup][0].file)];
+    autoDetectEntryColor(sourceFiles[target][0]).then(() => {
+      renderSourceList(target);
+      scheduleAutoConvert();
+    });
     renderSourceList(target);
     resetConverted();
     updateConvertButton();
@@ -203,19 +208,35 @@ updateConvertButton();
 updateUtilityButtons();
 registerServiceWorker();
 
-function addSourceFiles(group, files) {
+async function addSourceFiles(group, files) {
   if (files.length === 0) {
     return;
   }
 
   const isMultiGroup = packageModes[packageMode].multiGroups.includes(group);
-  sourceFiles[group] = isMultiGroup ? [...sourceFiles[group], ...files] : files.slice(0, 1);
+  const entries = files.map((file) => createSourceEntry(file));
+  sourceFiles[group] = isMultiGroup ? [...sourceFiles[group], ...entries] : entries.slice(0, 1);
   renderSourceList(group);
   resetConverted();
   updateConvertButton();
   updateUtilityButtons();
   setStatus(getReadinessMessage());
+
+  await Promise.all(entries.map((entry) => autoDetectEntryColor(entry)));
+  renderSourceList(group);
   scheduleAutoConvert();
+}
+
+function createSourceEntry(file) {
+  return {
+    id: `source-${sourceEntryId += 1}`,
+    file,
+    settings: {
+      transparent: transparentEnabled.checked,
+      color: normalizeHex(transparentColor.value) || "#ffffff",
+      colorMode: "auto"
+    }
+  };
 }
 
 function syncMode() {
@@ -278,11 +299,11 @@ async function runConversion(isAuto = false) {
 
     for (const group of activeGroups) {
       const size = outputSizes[group];
-      const files = sourceFiles[group];
-      for (let index = 0; index < files.length; index += 1) {
-        const result = await convertImage(files[index], index, size, color, Number(tolerance.value), group);
+      const entries = sourceFiles[group];
+      for (let index = 0; index < entries.length; index += 1) {
+        const result = await convertImage(entries[index], index, size, color, Number(tolerance.value), group);
         convertedFiles.push(result);
-        addPreview(result, files[index].name, size);
+        addPreview(result, entries[index].file.name, size);
       }
     }
 
@@ -308,28 +329,82 @@ function renderSourceList(group) {
   }
 
   list.innerHTML = "";
-  sourceFiles[group].forEach((file, index) => {
+  sourceFiles[group].forEach((entry, index) => {
+    const file = entry.file;
+    const settings = entry.settings;
     const url = URL.createObjectURL(file);
     const plannedName = getOutputFilename(group, index, outputSizes[group]);
     const item = document.createElement("article");
     item.className = "source-chip";
     item.innerHTML = `
       <img class="source-image" src="${url}" alt="${escapeHtml(file.name)}">
-      <div>
+      <div class="source-body">
         <p class="filename">${escapeHtml(file.name)}</p>
         <p class="meta">出力予定: ${escapeHtml(plannedName)}</p>
         <p class="meta source-meta">元画像 / ${(file.size / 1024).toFixed(1)} KB</p>
+        <div class="per-image-settings">
+          <label class="mini-toggle">
+            <input class="per-transparent" type="checkbox" ${settings.transparent ? "checked" : ""}>
+            <span>透明化する</span>
+          </label>
+          <div class="per-color-row">
+            <span class="color-chip" style="background:${escapeHtml(settings.color)}"></span>
+            <input class="per-color" type="color" value="${escapeHtml(settings.color)}" ${settings.transparent ? "" : "disabled"}>
+            <input class="per-hex" type="text" value="${escapeHtml(settings.color)}" inputmode="text" aria-label="画像ごとの背景色" ${settings.transparent ? "" : "disabled"}>
+          </div>
+          <button class="auto-entry-color-btn" type="button" ${settings.transparent ? "" : "disabled"}>背景色を自動判定</button>
+        </div>
       </div>
       <button class="remove-source-btn" type="button">削除</button>
     `;
 
     const image = item.querySelector(".source-image");
+    const colorChip = item.querySelector(".color-chip");
+    const transparentInput = item.querySelector(".per-transparent");
+    const colorInput = item.querySelector(".per-color");
+    const hexInput = item.querySelector(".per-hex");
+    const autoEntryColorBtn = item.querySelector(".auto-entry-color-btn");
+    const syncEntryColorControls = () => {
+      colorInput.value = settings.color;
+      hexInput.value = settings.color;
+      colorChip.style.background = settings.color;
+      colorInput.disabled = !settings.transparent;
+      hexInput.disabled = !settings.transparent;
+      autoEntryColorBtn.disabled = !settings.transparent;
+    };
+
     image.addEventListener("load", () => {
       item.querySelector(".source-meta").textContent =
         `元画像 ${image.naturalWidth}×${image.naturalHeight}px / ${(file.size / 1024).toFixed(1)} KB`;
     });
     image.addEventListener("click", (event) => {
-      pickColorFromImage(image, event);
+      pickColorFromImage(image, event, entry, syncEntryColorControls);
+    });
+    transparentInput.addEventListener("change", () => {
+      settings.transparent = transparentInput.checked;
+      syncEntryColorControls();
+      handleProcessingSettingChanged(`${file.name} の透明化設定を変更しました。`);
+    });
+    colorInput.addEventListener("input", () => {
+      settings.color = colorInput.value;
+      settings.colorMode = "manual";
+      syncEntryColorControls();
+      handleProcessingSettingChanged(`${file.name} の背景色を変更しました。`);
+    });
+    hexInput.addEventListener("input", () => {
+      const value = normalizeHex(hexInput.value);
+      if (!value) {
+        return;
+      }
+      settings.color = value;
+      settings.colorMode = "manual";
+      syncEntryColorControls();
+      handleProcessingSettingChanged(`${file.name} の背景色を変更しました。`);
+    });
+    autoEntryColorBtn.addEventListener("click", async () => {
+      await autoDetectEntryColor(entry);
+      syncEntryColorControls();
+      handleProcessingSettingChanged(`${file.name} の背景色を自動判定しました: ${settings.color}`);
     });
     item.querySelector(".remove-source-btn").addEventListener("click", () => {
       removeSourceFile(group, index);
@@ -478,7 +553,7 @@ function getSourceCount() {
 function getFirstActiveSourceFile() {
   for (const group of packageModes[packageMode].groups) {
     if (sourceFiles[group].length > 0) {
-      return sourceFiles[group][0];
+      return sourceFiles[group][0].file;
     }
   }
   return null;
@@ -546,6 +621,7 @@ function resetWorkspace() {
     tab: [],
     emoji: []
   };
+  sourceEntryId = 0;
   for (const input of fileInputs) {
     input.value = "";
   }
@@ -626,7 +702,7 @@ function hideChecks() {
   checkList.innerHTML = "";
 }
 
-function pickColorFromImage(image, event) {
+function pickColorFromImage(image, event, entry = null, onChange = null) {
   if (!image.naturalWidth || !image.naturalHeight) {
     return;
   }
@@ -651,6 +727,16 @@ function pickColorFromImage(image, event) {
   context.drawImage(image, 0, 0);
   const [red, green, blue] = context.getImageData(x, y, 1, 1).data;
   const hex = rgbToHex(red, green, blue);
+
+  if (entry) {
+    entry.settings.color = hex;
+    entry.settings.colorMode = "manual";
+    if (onChange) {
+      onChange();
+    }
+    handleProcessingSettingChanged(`${entry.file.name} の背景色を ${hex} に設定しました。`);
+    return;
+  }
 
   transparentColor.value = hex;
   hexColor.value = hex;
@@ -691,7 +777,10 @@ async function saveSinglePng(file) {
   downloadBlob(blob, file.name);
 }
 
-async function convertImage(file, index, size, transparentRgb, toleranceValueNumber, group) {
+async function convertImage(entry, index, size, fallbackTransparentRgb, toleranceValueNumber, group) {
+  const file = entry.file;
+  const imageSettings = entry.settings;
+  const transparentRgb = hexToRgb(imageSettings.color) || fallbackTransparentRgb;
   const image = await loadImage(file);
   const sourceCanvas = document.createElement("canvas");
   sourceCanvas.width = image.naturalWidth;
@@ -699,7 +788,7 @@ async function convertImage(file, index, size, transparentRgb, toleranceValueNum
 
   const sourceContext = sourceCanvas.getContext("2d", { willReadFrequently: true });
   sourceContext.drawImage(image, 0, 0);
-  if (transparentEnabled.checked) {
+  if (imageSettings.transparent) {
     applyTransparency(sourceContext, sourceCanvas.width, sourceCanvas.height, transparentRgb, toleranceValueNumber);
   }
 
@@ -728,6 +817,9 @@ async function convertImage(file, index, size, transparentRgb, toleranceValueNum
   outputContext.imageSmoothingEnabled = true;
   outputContext.imageSmoothingQuality = "high";
   outputContext.drawImage(sourceCanvas, sourceX, sourceY, sourceWidth, sourceHeight, drawX, drawY, drawWidth, drawHeight);
+  if (imageSettings.transparent) {
+    applyTransparency(outputContext, outputCanvas.width, outputCanvas.height, transparentRgb, toleranceValueNumber);
+  }
 
   const blob = await canvasToBlob(outputCanvas);
   const bytes = new Uint8Array(await blob.arrayBuffer());
@@ -745,6 +837,69 @@ async function convertImage(file, index, size, transparentRgb, toleranceValueNum
     bytes,
     url: URL.createObjectURL(blob)
   };
+}
+
+async function autoDetectEntryColor(entry) {
+  try {
+    const image = await loadImage(entry.file);
+    const canvas = document.createElement("canvas");
+    canvas.width = image.naturalWidth;
+    canvas.height = image.naturalHeight;
+    const context = canvas.getContext("2d", { willReadFrequently: true });
+    context.drawImage(image, 0, 0);
+    entry.settings.color = detectCornerBackgroundColor(context, canvas.width, canvas.height);
+    entry.settings.colorMode = "auto";
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+function detectCornerBackgroundColor(context, width, height) {
+  const maxX = Math.max(0, width - 1);
+  const maxY = Math.max(0, height - 1);
+  const samples = [
+    context.getImageData(0, 0, 1, 1).data,
+    context.getImageData(maxX, 0, 1, 1).data,
+    context.getImageData(0, maxY, 1, 1).data,
+    context.getImageData(maxX, maxY, 1, 1).data
+  ].map(([red, green, blue]) => ({ red, green, blue }));
+
+  const groups = [];
+  const groupTolerance = 24;
+  for (const sample of samples) {
+    const match = groups.find((group) => colorDistance(group.average, sample) <= groupTolerance);
+    if (match) {
+      match.colors.push(sample);
+      match.average = averageColors(match.colors);
+    } else {
+      groups.push({ colors: [sample], average: sample });
+    }
+  }
+
+  groups.sort((a, b) => b.colors.length - a.colors.length);
+  const selected = groups[0] && groups[0].colors.length > 1
+    ? groups[0].average
+    : averageColors(samples);
+
+  return rgbToHex(Math.round(selected.red), Math.round(selected.green), Math.round(selected.blue));
+}
+
+function averageColors(colors) {
+  const total = colors.reduce((sum, color) => ({
+    red: sum.red + color.red,
+    green: sum.green + color.green,
+    blue: sum.blue + color.blue
+  }), { red: 0, green: 0, blue: 0 });
+
+  return {
+    red: total.red / colors.length,
+    green: total.green / colors.length,
+    blue: total.blue / colors.length
+  };
+}
+
+function colorDistance(colorA, colorB) {
+  return Math.hypot(colorA.red - colorB.red, colorA.green - colorB.green, colorA.blue - colorB.blue);
 }
 
 function getOutputFilename(group, index, size) {
@@ -791,8 +946,7 @@ function applyTransparency(context, width, height, target, toleranceValueNumber)
     const distance = Math.hypot(red - target.r, green - target.g, blue - target.b);
 
     if (distance <= maxDistance) {
-      const keepRatio = distance / maxDistance;
-      data[index + 3] = Math.round(data[index + 3] * keepRatio);
+      data[index + 3] = 0;
     }
   }
 
