@@ -1,4 +1,4 @@
-const CACHE_NAME = "stamp-koubou-pwa-v1.3.1";
+const CACHE_NAME = "stamp-koubou-pwa-v1.3.2";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -6,7 +6,9 @@ const APP_SHELL = [
   "./app.js",
   "./manifest.json",
   "./service-worker.js",
-  "./icons/icon-180.png",
+  "./icons/apple-touch-icon.png",
+  "./icons/favicon.png",
+  "./icons/stamp-koubou-logo.png",
   "./icons/icon-192.png",
   "./icons/icon-512.png"
 ];

@@ -64,8 +64,20 @@ button {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  gap: 10px;
+  gap: 18px;
   padding: 10px 4px 24px;
+}
+
+.hero-brand {
+  display: grid;
+  gap: 10px;
+}
+
+.app-logo {
+  display: block;
+  width: min(260px, 58vw);
+  height: auto;
+  object-fit: contain;
 }
 
 .eyebrow {
@@ -932,6 +944,10 @@ button:disabled {
   .hero {
     padding-top: 6px;
     flex-direction: column;
+  }
+
+  .app-logo {
+    width: min(230px, 72vw);
   }
 
   .help-open-btn {
