@@ -19,6 +19,9 @@ const countBadge = document.querySelector("#countBadge");
 const statusText = document.querySelector("#status");
 const checkPanel = document.querySelector("#checkPanel");
 const checkList = document.querySelector("#checkList");
+const helpOpenBtn = document.querySelector("#helpOpenBtn");
+const helpCloseBtn = document.querySelector("#helpCloseBtn");
+const helpModal = document.querySelector("#helpModal");
 const modeCards = [...document.querySelectorAll(".mode-card")];
 const fileInputs = [...document.querySelectorAll("[data-file-input]")];
 const uploadGroups = [...document.querySelectorAll(".upload-group")];
@@ -203,10 +206,42 @@ clearSelectionBtn.addEventListener("click", () => {
   updateDownloadButtons();
 });
 
+helpOpenBtn.addEventListener("click", () => {
+  openHelpModal();
+});
+
+helpCloseBtn.addEventListener("click", () => {
+  closeHelpModal();
+});
+
+helpModal.addEventListener("click", (event) => {
+  if (event.target === helpModal) {
+    closeHelpModal();
+  }
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && !helpModal.hidden) {
+    closeHelpModal();
+  }
+});
+
 syncMode();
 updateConvertButton();
 updateUtilityButtons();
 registerServiceWorker();
+
+function openHelpModal() {
+  helpModal.hidden = false;
+  document.body.classList.add("is-help-open");
+  helpCloseBtn.focus();
+}
+
+function closeHelpModal() {
+  helpModal.hidden = true;
+  document.body.classList.remove("is-help-open");
+  helpOpenBtn.focus();
+}
 
 async function addSourceFiles(group, files) {
   if (files.length === 0) {

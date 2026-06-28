@@ -17,10 +17,11 @@
     <main class="app">
       <section class="hero">
         <div>
-          <p class="eyebrow">LINE Creators Market 申請用 / v1.3</p>
+          <p class="eyebrow">LINE Creators Market 申請用 / v1.3.1</p>
           <h1>スタンプ工房</h1>
           <p class="lead">LINEスタンプ画像を、申請サイズへ一括変換</p>
         </div>
+        <button id="helpOpenBtn" class="help-open-btn" type="button" aria-haspopup="dialog">使い方</button>
       </section>
 
       <section class="workspace">
@@ -179,6 +180,61 @@
         </section>
       </section>
     </main>
+
+    <div id="helpModal" class="help-modal" role="dialog" aria-modal="true" aria-labelledby="helpTitle" hidden>
+      <div class="help-dialog" role="document">
+        <div class="help-header">
+          <div>
+            <p class="eyebrow">スタンプ工房の使い方</p>
+            <h2 id="helpTitle">使い方と保存時の注意</h2>
+          </div>
+          <button id="helpCloseBtn" class="help-close-btn" type="button" aria-label="使い方を閉じる">閉じる</button>
+        </div>
+
+        <div class="help-content">
+          <section>
+            <h3>このアプリでできること</h3>
+            <p>LINE Creators Market申請用に、スタンプ画像、メイン画像、トークルームタブ画像、絵文字画像を指定サイズのPNGへ一括変換できます。PNG保存とZIP保存に対応しています。</p>
+          </section>
+
+          <section>
+            <h3>基本の使い方</h3>
+            <ol>
+              <li>「スタンプセット」または「絵文字セット」を選びます。</li>
+              <li>必要な画像を追加します。</li>
+              <li>画像ごとの透明化設定を確認します。</li>
+              <li>「一括変換する」を押します。</li>
+              <li>プレビューを確認して、PNGまたはZIPで保存します。</li>
+            </ol>
+          </section>
+
+          <section>
+            <h3>スタンプセットの出力</h3>
+            <p>スタンプ画像は `01.png` からの2桁連番、メイン画像は `main.png`、トークルームタブ画像は `tab.png` として出力します。</p>
+          </section>
+
+          <section>
+            <h3>絵文字セットの出力</h3>
+            <p>絵文字画像は `001.png` からの3桁連番、トークルームタブ画像は `tab.png` として出力します。ZIP直下にPNGファイルが入ります。</p>
+          </section>
+
+          <section>
+            <h3>画像ごとの透明化設定</h3>
+            <p>追加した画像ごとに「透明化する」のON/OFF、背景色の自動判定、背景色の手動指定ができます。背景色が画像ごとに違う場合は、各画像カード内の設定を調整してください。</p>
+          </section>
+
+          <section>
+            <h3>iPhoneで保存する時の注意</h3>
+            <p>iPhoneでPNGやZIPを保存する場合は、Safariで開いたあと「ホーム画面に追加」して、ホーム画面アプリとして起動する使い方を推奨します。Safariで直接開いた場合、環境によって保存ボタンがうまく動かないことがあります。</p>
+          </section>
+
+          <section>
+            <h3>安全性とオフライン利用</h3>
+            <p>画像処理はブラウザ内で完結します。画像を外部サーバーへ送信する処理はありません。一度読み込んだ後は、オフラインでも基本画面を開けますが、変換する画像は端末から毎回選択してください。</p>
+          </section>
+        </div>
+      </div>
+    </div>
 
     <script src="./app.js"></script>
   </body>
